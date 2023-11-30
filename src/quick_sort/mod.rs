@@ -1,11 +1,11 @@
-mod action_history;
+pub mod action_context;
+pub mod action_history;
 
+use action_context::{CreateItem, Pivot};
 use action_history::{Action, ActionHistory};
 use uuid::Uuid;
 
-use crate::quick_sort::action_history::{CreateItem, Reaction, RecursiveItem, Recursion};
-
-use self::action_history::Pivot;
+use crate::quick_sort::action_history::Reaction;
 
 pub fn sort(arr: Vec<u32>) {
     let mut history = ActionHistory::new();
@@ -45,32 +45,41 @@ fn _sort(arr: Uuid, history: &mut ActionHistory) {
     }
 
     let pivot = items.pop().unwrap();
-
-    let left = Uuid::new_v4();
-    let right = Uuid::new_v4();
-
-    history.push(Action::CreateArray(left));
-    history.push(Action::CreateArray(right));
-
-    history.push(Action::StartRecursionLeft(Recursion::new(left)));
-    history.push(Action::StartRecursionRight(Recursion::new(right)));
-
     history.push(Action::ExtractPivot(Pivot::new(pivot.1, arr.clone())));
+
+    // let left = Uuid::new_v4();
+
+    // history.push(Action::CreateArray(left));
+    // // history.push(Action::StartRecursionLeft(Recursion::new(left)));
+    // history.push(Action::OpenScope(left));
+
+    // let right = Uuid::new_v4();
+    // history.push(Action::CreateArray(right));
+    // history.push(Action::OpenScope(right));
+
+    let mut left_items = vec![];
+    let mut right_items = vec![];
+
     for item in items {
         if item.0 > pivot.0 {
-            history.push(Action::RightItem(RecursiveItem::new(item.1)));
+            left_items.push(item.1);
+            // history.push(Action::RightItem(RecursiveItem::new(item.1)));
         } else {
-            history.push(Action::ItemLeft(RecursiveItem::new(item.1)));
+            right_items.push(item.1);
+            // history.push(Action::ItemLeft(RecursiveItem::new(item.1)));
         }
     }
 
-    history.push(Action::ConcatPivot(Pivot::new(pivot.1, arr.clone())));
+    // history.push(Action::ConcatPivot(Pivot::new(pivot.1, arr.clone())));
 
-    history.push(Action::ResolveRecursionLeft(Recursion::new(left)));
-    history.push(Action::ResolveRecursionRight(Recursion::new(right)));
+    // history.push(Action::CloseScope(left));
+    // history.push(Action::CloseScope(left));
 
-    history.push(Action::CleanArray(left));
-    history.push(Action::CleanArray(right));
+    // history.push(Action::ResolveRecursionLeft(Recursion::new(left)));
+    // history.push(Action::ResolveRecursionRight(Recursion::new(right)));
+
+    // history.push(Action::CleanArray(left));
+    // history.push(Action::CleanArray(right));
 
     println!("{:#?}", history);
 }

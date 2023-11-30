@@ -1,57 +1,6 @@
+use super::action_context::{*};
 use std::collections::HashMap;
 use uuid::Uuid;
-
-#[derive(Debug, Clone, Copy)]
-pub struct CreateItem {
-    pub value: u32,
-    pub value_uuid: Uuid,
-    pub array_uuid: Uuid,
-}
-impl CreateItem {
-    pub fn new(val: u32, vuuid: Uuid, auuid: Uuid) -> Self {
-        Self {
-            value: val,
-            value_uuid: vuuid,
-            array_uuid: auuid,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Pivot {
-    pub value_uuid: Uuid,
-    pub array_uuid: Uuid,
-}
-impl Pivot {
-    pub fn new(vuuid: Uuid, auuid: Uuid) -> Self {
-        Self {
-            value_uuid: vuuid,
-            array_uuid: auuid,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Recursion {
-    auuid: Uuid, // ID for Array
-}
-
-impl Recursion {
-    pub fn new(auuid: Uuid) -> Self {
-        Self { auuid }   
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct RecursiveItem {
-    vuuid: Uuid
-}
-
-impl RecursiveItem {
-    pub fn new(vuuid: Uuid) -> Self {
-        Self { vuuid }   
-    }
-}
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
@@ -69,6 +18,10 @@ pub enum Action {
 
     StartRecursionLeft(Recursion),
     StartRecursionRight(Recursion),
+
+    Move(Uuid),
+    OpenScope(Uuid), 
+    CloseScope(Uuid),
 
     ItemLeft(RecursiveItem),
     RightItem(RecursiveItem),
@@ -89,7 +42,7 @@ pub enum Reaction<'a> {
 pub enum Mapped {
     CreateArray,
     CleanedArray,
-    CreateItem,
+    ItemRefs,
     MovedItem,
 }
 
@@ -105,7 +58,7 @@ impl ActionHistory {
         let mut mapped = HashMap::new();
         mapped.insert(Mapped::CreateArray, HashMap::new());
         mapped.insert(Mapped::CleanedArray, HashMap::new());
-        mapped.insert(Mapped::CreateItem, HashMap::new());
+        mapped.insert(Mapped::ItemRefs, HashMap::new());
         mapped.insert(Mapped::MovedItem, HashMap::new());
 
         Self {
@@ -120,7 +73,7 @@ impl ActionHistory {
             Action::ReadItem(uuid) => {
                 let (action, _) = self
                     .mapped
-                    .get(&Mapped::CreateItem)
+                    .get(&Mapped::ItemRefs)
                     .unwrap()
                     .get(&uuid)
                     .unwrap();
@@ -167,21 +120,17 @@ impl ActionHistory {
                     .push(action.clone());
 
                 self.mapped
-                    .get_mut(&Mapped::CreateItem)
+                    .get_mut(&Mapped::ItemRefs)
                     .unwrap()
                     .insert(c.value_uuid.clone(), (action.clone(), self.actions.len()));
-
             }
             Action::EnterStage => self.actions.push(action),
             Action::CleanArray(uuid) => {
                 self.data.remove(&uuid);
             }
-            Action::ExtractPivot(d) => {
-            }
-            Action::ConcatPivot(d) => {
-            }
-            _ => {
-            }
+            Action::ExtractPivot(d) => {}
+            Action::ConcatPivot(d) => {}
+            _ => {}
         }
 
         self.actions.push(action);
